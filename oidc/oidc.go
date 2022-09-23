@@ -99,6 +99,7 @@ func doRequest(ctx context.Context, req *http.Request) (*http.Response, error) {
 // Provider represents an OpenID Connect server's configuration.
 type Provider struct {
 	issuer      string
+	regURL      string
 	authURL     string
 	tokenURL    string
 	userInfoURL string
@@ -112,6 +113,7 @@ type Provider struct {
 
 type providerJSON struct {
 	Issuer      string   `json:"issuer"`
+	RegURL      string   `json:"registration_endpoint"`
 	AuthURL     string   `json:"authorization_endpoint"`
 	TokenURL    string   `json:"token_endpoint"`
 	JWKSURL     string   `json:"jwks_uri"`
@@ -141,6 +143,9 @@ type ProviderConfig struct {
 	// ID tokens with. For example "https://accounts.google.com". This value MUST
 	// match ID tokens exactly.
 	IssuerURL string
+	// RegURL is the endpoint used by the provider to support the OAuth 2.0
+	// registration endpoint
+	RegURL string
 	// AuthURL is the endpoint used by the provider to support the OAuth 2.0
 	// authorization endpoint.
 	AuthURL string
@@ -168,6 +173,7 @@ type ProviderConfig struct {
 func (p *ProviderConfig) NewProvider(ctx context.Context) *Provider {
 	return &Provider{
 		issuer:       p.IssuerURL,
+		regURL:       p.RegURL,
 		authURL:      p.AuthURL,
 		tokenURL:     p.TokenURL,
 		userInfoURL:  p.UserInfoURL,
@@ -222,6 +228,7 @@ func NewProvider(ctx context.Context, issuer string) (*Provider, error) {
 	}
 	return &Provider{
 		issuer:       issuerURL,
+		regURL:       p.RegURL,
 		authURL:      p.AuthURL,
 		tokenURL:     p.TokenURL,
 		userInfoURL:  p.UserInfoURL,

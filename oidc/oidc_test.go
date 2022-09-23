@@ -108,6 +108,7 @@ func TestNewProvider(t *testing.T) {
 		data              string
 		issuerURLOverride string
 		trailingSlash     bool
+		wantRegURL        string
 		wantAuthURL       string
 		wantTokenURL      string
 		wantUserInfoURL   string
@@ -119,11 +120,13 @@ func TestNewProvider(t *testing.T) {
 			name: "basic_case",
 			data: `{
 				"issuer": "ISSUER",
+				"registration_endpoint": "https://example.com/registration",
 				"authorization_endpoint": "https://example.com/auth",
 				"token_endpoint": "https://example.com/token",
 				"jwks_uri": "https://example.com/keys",
 				"id_token_signing_alg_values_supported": ["RS256"]
 			}`,
+			wantRegURL:     "https://example.com/registration",
 			wantAuthURL:    "https://example.com/auth",
 			wantTokenURL:   "https://example.com/token",
 			wantAlgorithms: []string{"RS256"},
@@ -132,11 +135,13 @@ func TestNewProvider(t *testing.T) {
 			name: "additional_algorithms",
 			data: `{
 				"issuer": "ISSUER",
+				"registration_endpoint": "https://example.com/registration"
 				"authorization_endpoint": "https://example.com/auth",
 				"token_endpoint": "https://example.com/token",
 				"jwks_uri": "https://example.com/keys",
 				"id_token_signing_alg_values_supported": ["RS256", "RS384", "ES256"]
 			}`,
+			wantRegURL:     "https://example.com/registration",
 			wantAuthURL:    "https://example.com/auth",
 			wantTokenURL:   "https://example.com/token",
 			wantAlgorithms: []string{"RS256", "RS384", "ES256"},
@@ -145,6 +150,7 @@ func TestNewProvider(t *testing.T) {
 			name: "unsupported_algorithms",
 			data: `{
 				"issuer": "ISSUER",
+				"registration_endpoint": "https://example.com/registration"
 				"authorization_endpoint": "https://example.com/auth",
 				"token_endpoint": "https://example.com/token",
 				"jwks_uri": "https://example.com/keys",
@@ -152,6 +158,7 @@ func TestNewProvider(t *testing.T) {
 					"RS256", "RS384", "ES256", "HS256", "none"
 				]
 			}`,
+			wantRegURL:     "https://example.com/registration",
 			wantAuthURL:    "https://example.com/auth",
 			wantTokenURL:   "https://example.com/token",
 			wantAlgorithms: []string{"RS256", "RS384", "ES256"},
@@ -160,6 +167,7 @@ func TestNewProvider(t *testing.T) {
 			name: "mismatched_issuer",
 			data: `{
 				"issuer": "https://example.com",
+				"registration_endpoint": "https://example.com/registration"
 				"authorization_endpoint": "https://example.com/auth",
 				"token_endpoint": "https://example.com/token",
 				"jwks_uri": "https://example.com/keys",
@@ -172,12 +180,14 @@ func TestNewProvider(t *testing.T) {
 			issuerURLOverride: "https://example.com",
 			data: `{
 				"issuer": "ISSUER",
+				"registration_endpoint": "https://example.com/registration"
 				"authorization_endpoint": "https://example.com/auth",
 				"token_endpoint": "https://example.com/token",
 				"jwks_uri": "https://example.com/keys",
 				"id_token_signing_alg_values_supported": ["RS256"]
 			}`,
 			wantIssuerURL:  "https://example.com",
+			wantRegURL:     "https://example.com/registration",
 			wantAuthURL:    "https://example.com/auth",
 			wantTokenURL:   "https://example.com/token",
 			wantAlgorithms: []string{"RS256"},
@@ -186,12 +196,14 @@ func TestNewProvider(t *testing.T) {
 			name: "issuer_with_trailing_slash",
 			data: `{
 				"issuer": "ISSUER",
+				"registration_endpoint": "https://example.com/registration"
 				"authorization_endpoint": "https://example.com/auth",
 				"token_endpoint": "https://example.com/token",
 				"jwks_uri": "https://example.com/keys",
 				"id_token_signing_alg_values_supported": ["RS256"]
 			}`,
 			trailingSlash:  true,
+			wantRegURL:     "https://example.com/registration",
 			wantAuthURL:    "https://example.com/auth",
 			wantTokenURL:   "https://example.com/token",
 			wantAlgorithms: []string{"RS256"},
@@ -306,6 +318,10 @@ func TestNewProvider(t *testing.T) {
 					p.issuer, test.wantIssuerURL)
 			}
 
+			if p.regURL != test.wantRegURL {
+				t.Errorf("NewProvider() unexpected regURL value, got=%s, want=%s",
+					p.regURL, test.wantRegURL)
+			}
 			if p.authURL != test.wantAuthURL {
 				t.Errorf("NewProvider() unexpected authURL value, got=%s, want=%s",
 					p.authURL, test.wantAuthURL)
@@ -364,6 +380,7 @@ func (ts *testServer) run(t *testing.T) string {
 
 	wellKnown := fmt.Sprintf(`{
 		"issuer": "%[1]s",
+		"registration_endpoint": "%[1]s/registration",
 		"authorization_endpoint": "%[1]s/auth",
 		"token_endpoint": "%[1]s/token",
 		"jwks_uri": "%[1]s/keys",
